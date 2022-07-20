@@ -210,51 +210,6 @@ export class Chain<Input = void, Result = {}>
 
     //#endregion
 
-    //#region Raws
-
-    private addUntrackedRaw(factory: (input: Result) => any, config = defaultConfig())
-    {
-        const task = new Task((input: Result) => factory(input).execute());
-        this._contexts.push(new ExecutionContext({ task, ...config }, this._state));
-        return this;
-    }
-
-    private addRaw(factory: (input: Result) => any, id: Key, config = defaultConfig())
-    {
-        const task = new Task((input: Result) => factory(input).execute());
-        this._contexts.push(new ExecutionContext({ task, key: id, ...config }, this._state));
-        return this;
-    }
-
-    // Untracked raw
-    raw<E extends IExecutable<void, R>, R>(factory: (input: Result) => E, config?: Config): Chain<Input, Result>;
-
-    // Tracked raw
-    raw<
-        E extends IExecutable<void, R> & IState<any>,
-        K extends Key,
-        Cfg extends Config<WithParentState<Input, Result>>,
-        R = E extends IExecutable<void, infer T> ? T : {}
-    >
-        (factory: (input: Result) => E, id: K, config?: Cfg): Chain<
-            Input,
-            Result & ComplexConfig<Cfg, K, R, WithErr<R>>
-        >;
-
-    raw(...args: any[])
-    {
-        if (!args || !args.length) return this;
-
-        if (args.length >= 2 && isKey(args[1]))
-            return this.addRaw(args[0], args[1], args[2]);
-        if (args.length >= 1 && !isKey(args[1]))
-            return this.addUntrackedRaw(args[0], args[1]);
-
-        return this;
-    }
-
-    //#endregion
-
     //#region Conditional
 
     private addUntrackedConditionalTask(
