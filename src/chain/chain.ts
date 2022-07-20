@@ -89,14 +89,14 @@ export class Chain<Input = void, Result = {}>
     private addUntrackedParallel(actions: Action<any, any>[], config = defaultConfig())
     {
         const task = new Parallel({}, actions);
-        this._contexts.push(new ExecutionContext({ task, ...config }, this._state));
+        this._contexts.push(new ExecutionContext({ task, ...config, abortOnFail: true }, this._state));
         return this;
     }
 
     private addParallel(actions: any, id: any, config = defaultConfig())
     {
         const task = new Parallel(actions);
-        this._contexts.push(new ExecutionContext({ task, key: id, ...config }, this._state))
+        this._contexts.push(new ExecutionContext({ task, key: id, ...config, abortOnFail: true }, this._state))
         return this;
     }
 
@@ -104,14 +104,14 @@ export class Chain<Input = void, Result = {}>
         (actions: ActionsRecord<any, any>, untrackedActions: Action<any, any>[], id: Key, config = defaultConfig())
     {
         const task = new Parallel(actions, untrackedActions);
-        this._contexts.push(new ExecutionContext({ task, key: id, ...config }, this._state));
+        this._contexts.push(new ExecutionContext({ task, key: id, ...config, abortOnFail: true }, this._state));
         return this as any;
     }
 
     // Untracked parallel
     parallel<
         A extends Array<(arg: WithParentState<Input, Result>) => any>,
-        Cfg extends Config<WithParentState<Input, Result>>
+        Cfg extends Omit<Config<WithParentState<Input, Result>>, 'abortOnFail'>
     >
         (actions: A, config?: Cfg): Chain<Input, Result>;
 
@@ -120,7 +120,7 @@ export class Chain<Input = void, Result = {}>
         A extends Record<AK, (arg: WithParentState<Input, Result>) => any>,
         AK extends Key,
         K extends Key,
-        Cfg extends Config<WithParentState<Input, Result>>
+        Cfg extends Omit<Config<WithParentState<Input, Result>>, 'abortOnFail'>
     >
         (actions: A, id: K, config?: Cfg):
         Chain<
@@ -134,7 +134,7 @@ export class Chain<Input = void, Result = {}>
         B extends Array<Action<WithParentState<Input, Result>, any>>,
         AK extends Key,
         K extends Key,
-        Cfg extends Config<WithParentState<Input, Result>>
+        Cfg extends Omit<Config<WithParentState<Input, Result>>, 'abortOnFail'>
     >
         (actions: A, untrackedActions: B, id: K, config?: Cfg): 
         Chain<
@@ -146,7 +146,7 @@ export class Chain<Input = void, Result = {}>
     {
         if (!args || !args.length) return this;
 
-        if (typeof args[0] === 'object')
+        if (typeof args[0] === 'object' && !Array.isArray(args[0]))
         {
             if (isKey(args[1]))
                 return this.addParallel(args[0], args[1], args[2]);
@@ -179,7 +179,10 @@ export class Chain<Input = void, Result = {}>
     }
 
     // Untracked chain
-    chain<C extends Chain>(factory: (chain: C) => C, config?: Config<WithParentState<Input, Result>>): Chain<Input, Result>;
+    chain<
+        C extends Chain<WithParentState<Input, Result>>
+    >
+    (factory: (chain: C) => C, config?: Config<WithParentState<Input, Result>>): Chain<Input, Result>;
 
     // Tracked chain
     chain<
@@ -314,7 +317,7 @@ export class Chain<Input = void, Result = {}>
     {
         if (!args || !args.length) return this;
 
-        if (isKey(typeof args[1]))
+        if (isKey(args[1]))
             return this.addTrackedConditionalTask(args[0], args[1], args[2]);
         else return this.addUntrackedConditionalTask(args[0], args[1]);
     }

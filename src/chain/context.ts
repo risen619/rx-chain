@@ -1,7 +1,6 @@
 import { asyncScheduler, Observable, Subject, of } from "rxjs";
 import { catchError, subscribeOn, switchMap, tap } from "rxjs/operators";
 
-import { Parallel } from "../parallel";
 import { State } from "../state";
 import { Task } from "../task";
 import { IExecutable, IState, Key, WithErr } from "../types";
@@ -30,7 +29,7 @@ export class ExecutionContext
                         this.state.set({
                             ...this.state.state,
                             [this.context.key]: (
-                                this.context.abortOnFail || this.context.task instanceof Parallel ?
+                                this.context.abortOnFail ?
                                     v :
                                     { failed: false, value: v } as WithErr
                             )
